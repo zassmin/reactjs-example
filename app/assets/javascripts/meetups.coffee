@@ -1,8 +1,27 @@
-# Place all the behaviors and hooks related to the matching controller here.
-# All this logic will automatically be available in application.js.
-# You can use CoffeeScript in this file: http://coffeescript.org/
-
 DOM = React.DOM
+
+FormInputWithLabelAndReset = React.createClass
+  displayName: "FormInputWithLabelAndReset"
+  render: ->
+    DOM.div
+      className: "form-group"
+      DOM.label
+        htmlFor: @props.id
+        className: "col-lg-2 control-label"
+        @props.labelText
+      DOM.div
+        className: "col-lg-8"
+        DOM.div
+          className: "input-group"
+          DOM.input
+            className: "form-control"
+            placeholder: @props.placeholder
+            id: @props.id
+            value: @props.value
+            onChange: (event) =>
+              @props.onChange(event.target.value)
+
+formInputWithLabelAndReset = React.createFactory(FormInputWithLabelAndReset)
 
 monthName = (monthNumberStartingFromZero) ->
   [
@@ -19,7 +38,7 @@ dayName = (date) ->
 DateWithLabel = React.createClass
   getDefaultProps: ->
     date: new Date()
-  onYearChange: (event) -> # why is this here?
+  onYearChange: (event) ->
     newDate = new Date(
       event.target.value, 
       @props.date.getMonth(), 
@@ -112,7 +131,8 @@ window.CreateNewMeetupForm = React.createClass
       meetup: {
         title: '', # what the best way to prevent '' from becoming an object in the server
         description: '',
-        date: new Date(), # why?
+        date: new Date(), # why?, is new Date(), date.today? is this hash was renders at page load? yes!!!
+        seoText: null
       }
     }
   titleChanged: (event) ->
@@ -124,6 +144,14 @@ window.CreateNewMeetupForm = React.createClass
   dateChanged: (newDate) ->
     @state.meetup.date = newDate # this is stateless right now
     @forceUpdate()
+  seoChanged: (seoText) ->
+    @state.meetup.seoText = seoText
+    @forceUpdate()
+  computeDefaultSeoText: () -> 
+    words = @state.meetup.title.toLowerCase().split(/\s+/)
+    words.push(monthName(@state.meetup.date.getMonth()))
+    words.push(@state.meetup.date.getFullYear().toString())
+    words.filter((string) -> string.trim().length > 0).join("-").toLowerCase()
   formSubmitted: (event) -> 
     event.preventDefault()
     meetup = @state.meetup
@@ -160,6 +188,13 @@ window.CreateNewMeetupForm = React.createClass
         dateWithLabel
           onChange: @dateChanged
           date: @state.meetup.date
+        formInputWithLabelAndReset
+          id: "seo"
+          value: if @state.meetup.seoText? then @state.meetup.seoText else @computeDefaultSeoText()
+          onChange: @seoChanged
+          placeholder: "SEO text"
+          labelText: "seo"
+
         DOM.div
           className: "form-group"
           DOM.div
